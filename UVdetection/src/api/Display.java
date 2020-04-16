@@ -19,7 +19,7 @@ public class Display {
 			x=0;
 			y+=data.height()/displayDivide+20;
 		}
-		 //hey there
+		 //hey 
 		//resizeWindow() is destructive! wtf?
 		String hashname = image.name+String.valueOf(Math.random());
 		
