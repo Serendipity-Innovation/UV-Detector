@@ -1,14 +1,12 @@
 package api;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.Arrays;
 import java.util.List;
 
-import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.DMatch;
-import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfDMatch;
@@ -20,10 +18,8 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
-import org.opencv.features2d.FastFeatureDetector;
 import org.opencv.features2d.FeatureDetector;
 import org.opencv.features2d.Features2d;
-import org.opencv.features2d.FlannBasedMatcher;
 import org.opencv.highgui.HighGui;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
@@ -205,7 +201,6 @@ public class image{
 	}
 	
 	
-	
 	public void findEdges() {
 		// Remove noise
         blur(3);
@@ -218,8 +213,8 @@ public class image{
         
         //note: for ksize=3 use scharr instead of Sobel 
         //Output mat as 16bit signed one channel gray (to prevent overflow) 
-        Imgproc.Sobel( me, edgeX, CvType.CV_16S, 0, 1,5);//ksize, scale, delta
-        Imgproc.Sobel( me, edgeY, CvType.CV_16S, 1, 0,5);//ksize, scale 1, delta 0
+        Imgproc.Sobel( me, edgeX, CvType.CV_16S, 0, 1,3);//ksize, scale, delta
+        Imgproc.Sobel( me, edgeY, CvType.CV_16S, 1, 0,3);//ksize, scale 1, delta 0
         
         //converting back to 8 bit unsigned
         Core.convertScaleAbs(edgeX,edgeXabs);
@@ -251,7 +246,7 @@ public class image{
 		for(int i=0;i<contours.size();i++) {
 			double area = Imgproc.contourArea(contours.get(i));
 			double perimeter = Imgproc.arcLength(new MatOfPoint2f(contours.get(i).toArray()), true);
-			if(area < 100 || (perimeter*perimeter)/area > 60) {//the longer, the greater
+			if(!(area > 50 && (perimeter*perimeter)/area < 100)) {//big enough, short enough
 				contours.remove(i);
 				i--;
 			}
@@ -288,12 +283,16 @@ public class image{
 		Core.add(me, in.me, me);
 	}
 	
+	public void invert() {
+		Core.bitwise_not(me, me);
+	}
+	
 	public void binarize(int power) {//140
 		
 		Imgproc.adaptiveThreshold(me, me, 255, 
 				Imgproc.ADAPTIVE_THRESH_MEAN_C, 
 				Imgproc.THRESH_BINARY, 
-				201, //ksize
+				301, //ksize
 				-power); //fuzz factor (repress static noise)
 	}
 	
@@ -325,11 +324,17 @@ public class image{
 		Imgproc.cvtColor(me, me, Imgproc.COLOR_RGB2GRAY);
 	}public void toColor() {
 		Imgproc.cvtColor(me, me, Imgproc.COLOR_GRAY2RGB);
+	}public void binaryToColor() {
+		Core.merge(new ArrayList<>(Arrays.asList(me,me,me)), me);
 	}
 	
 	
 	public void show() {
 		Display.show(this);
+	}
+	
+	public image clone() {
+		return new image(me.clone(), name);
 	}
 
 }
